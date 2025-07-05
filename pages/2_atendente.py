@@ -1,22 +1,35 @@
 import streamlit as st
 
 st.title("📋 Painel do Atendente")
-setores = ['Veículos', 'Financeiro', 'Protocolo', 'Geral']
 
+# Lista de setores e atendentes por setor
+setores = ['Veículos', 'Financeiro', 'Protocolo', 'Geral']
+atendentes_por_setor = {
+    'Veículos': ['Atendente 1', 'Atendente 2', 'Atendente 3', 'Atendente 4', 'Atendente 5'],
+    'Financeiro': ['Atendente A', 'Atendente B', 'Atendente C'],
+    'Protocolo': ['Atendente X', 'Atendente Y'],
+    'Geral': ['Atendente Único']
+}
+
+# Inicializa as listas no session_state, se ainda não existirem
 if 'senhas_pendentes' not in st.session_state:
     st.session_state.senhas_pendentes = {s: [] for s in setores}
 
 if 'senhas_atendidas' not in st.session_state:
     st.session_state.senhas_atendidas = {s: [] for s in setores}
 
+# Seleção do setor e atendente
 setor = st.selectbox("Selecione seu setor:", setores)
+atendente = st.selectbox("Selecione seu nome:", atendentes_por_setor[setor])
 
 pendentes = st.session_state.senhas_pendentes[setor]
 atendidas = st.session_state.senhas_atendidas[setor]
 
 st.subheader(f"Senhas pendentes - {setor} ({len(pendentes)})")
+
+idx_para_remover = None
+
 if pendentes:
-    idx_para_remover = None
     for idx, item in enumerate(pendentes):
         col1, col2, col3 = st.columns([2, 2, 1])
         col1.write(f"**{item['senha']}**")
@@ -25,14 +38,18 @@ if pendentes:
             idx_para_remover = idx
 
     if idx_para_remover is not None:
-        # Move para atendidas
         atendida = pendentes.pop(idx_para_remover)
+        atendida['atendente'] = atendente
         atendidas.append(atendida)
         st.experimental_rerun()
 else:
     st.info("Nenhuma senha em espera.")
 
 st.markdown("---")
+
 st.subheader(f"Senhas atendidas - {setor} ({len(atendidas)})")
-for item in atendidas:
-    st.write(f"**{item['senha']}** - {item['hora']}")
+if atendidas:
+    for item in atendidas:
+        st.write(f"**{item['senha']}** - {item['hora']} - Atendido por: {item.get('atendente', 'Desconhecido')}")
+else:
+    st.info("Nenhuma senha atendida ainda.")
