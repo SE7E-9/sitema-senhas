@@ -1,13 +1,18 @@
 import streamlit as st
 import requests
+from streamlit_autorefresh import st_autorefresh
 
+st.set_page_config(page_title="Atendente", layout="centered")
 st.title("📋 Painel do Atendente")
 
-# URLs das APIs
+# 🔁 Atualização automática a cada 10 segundos
+st_autorefresh(interval=10_000, key="atualizacao")
+
+# 🌐 APIs do Sheet.best
 api_pendentes = "https://api.sheetbest.com/sheets/f2bab54d-e790-46ea-9371-bd68e68bbcbc"
 api_atendidas = "https://api.sheetbest.com/sheets/bb970f05-0342-4667-8fd4-8c16998c7422"
 
-# Setores e atendentes
+# 📌 Setores e atendentes
 setores = ['Veículos', 'Financeiro', 'Protocolo', 'Geral']
 atendentes = {
     'Veículos': ['Atendente 1', 'Atendente 2', 'Atendente 3', 'Atendente 4', 'Atendente 5'],
@@ -16,36 +21,33 @@ atendentes = {
     'Geral': ['Geral Único']
 }
 
-# Seleção de setor e atendente
+# 🔽 Seleção
 setor = st.selectbox("Selecione o setor:", setores)
 atendente = st.selectbox("Selecione seu nome:", atendentes[setor])
 
-# Botão de atualização manual
-if st.button("🔄 Atualizar lista"):
-    st.experimental_rerun()
-
-# Obter senhas pendentes
+# 📥 Buscar senhas pendentes
 try:
     res = requests.get(api_pendentes)
-    senhas = res.json()
-    senhas_do_setor = [s for s in senhas if s.get("setor") == setor]
+    res.raise_for_status()
+    todas = res.json()
+    senhas_do_setor = [s for s in todas if s.get("setor") == setor]
 except Exception as e:
-    st.error(f"Erro ao buscar senhas: {e}")
+    st.error(f"Erro ao carregar senhas pendentes: {e}")
     senhas_do_setor = []
 
-st.subheader(f"Senhas Pendentes - {setor}")
+# 🧾 Exibir senhas pendentes
+st.subheader(f"🎟️ Senhas Pendentes - {setor}")
 
-# Exibir senhas
 if not senhas_do_setor:
-    st.info("Nenhuma senha pendente.")
+    st.info("Nenhuma senha pendente no momento.")
 else:
     for senha in senhas_do_setor:
         if "id" not in senha or not senha["id"]:
-            continue  # Ignora senhas antigas sem ID
+            continue  # Pula senhas antigas sem ID
 
         col1, col2, col3 = st.columns([3, 2, 1])
-        col1.write(f"**{senha.get('senha', '—')}**")
-        col2.write(f"{senha.get('hora', '—')}")
+        col1.markdown(f"**{senha.get('senha', '—')}**")
+        col2.markdown(f"{senha.get('hora', '—')}")
         
         if col3.button("Atender", key=senha["id"]):
             payload = {
@@ -57,30 +59,28 @@ else:
             }
 
             try:
-                # Salvar na aba Atendidas
-                r = requests.post(api_atendidas, json=payload)
-                if r.status_code != 200:
-                    st.error("Erro ao salvar em atendidas.")
-                    st.stop()
+                r1 = requests.post(api_atendidas, json=payload)
+                r1.raise_for_status()
 
-                # Apagar da aba Pendentes
                 r2 = requests.delete(f"{api_pendentes}?id={senha['id']}")
-                if r2.status_code == 200:
-                    st.success(f"Senha {senha['senha']} atendida.")
-                    st.experimental_rerun()
-                else:
-                    st.error("Erro ao remover da lista.")
-            except Exception as e:
-                st.error(f"Erro ao atender: {e}")
+                r2.raise_for_status()
 
-# Exibir últimas atendidas
+                st.success(f"✅ Senha {senha['senha']} atendida por {atendente}")
+                st.experimental_rerun()
+            except Exception as e:
+                st.error(f"Erro ao atender a senha: {e}")
+
+# 🕓 Últimas senhas atendidas
 st.markdown("---")
-st.subheader("Últimas Senhas Atendidas")
+st.subheader("📚 Últimos Atendimentos")
 
 try:
-    r = requests.get(api_atendidas)
-    atendidas = [s for s in r.json() if s.get("setor") == setor]
-    for s in atendidas[::-1][:10]:
-        st.write(f"**{s.get('senha', '—')}** - {s.get('hora', '—')} - 👤 {s.get('atendente', '—')}")
+    res = requests.get(api_atendidas)
+    res.raise_for_status()
+    historico = [s for s in res.json() if s.get("setor") == setor]
+    historico = historico[::-1][:10]
+
+    for s in historico:
+        st.write(f"🟢 **{s.get('senha', '—')}** às {s.get('hora', '—')} por 👤 {s.get('atendente', '—')}")
 except:
-    st.warning("Não foi possível carregar atendimentos recentes.")
+    st.warning("⚠️ Não foi possível carregar o histórico.")
