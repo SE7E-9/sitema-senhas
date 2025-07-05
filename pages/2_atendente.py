@@ -1,4 +1,5 @@
 import streamlit as st
+import requests
 
 st.title("📋 Painel do Atendente")
 
@@ -10,42 +11,50 @@ atendentes_por_setor = {
     'Geral': ['Atendente Único']
 }
 
-# Garantir inicialização
-if 'senhas_pendentes' not in st.session_state:
-    st.session_state.senhas_pendentes = {s: [] for s in setores}
-if 'senhas_atendidas' not in st.session_state:
-    st.session_state.senhas_atendidas = {s: [] for s in setores}
+api_pendentes = "https://api.sheetbest.com/sheets/f2bab54d-e790-46ea-9371-bd68e68bbcbc"
+api_atendidas = "https://api.sheetbest.com/sheets/bb970f05-0342-4667-8fd4-8c16998c7422"
 
 setor = st.selectbox("Selecione seu setor:", setores)
-atendente = st.selectbox("Selecione seu nome:", atendentes_por_setor[setor])
+atendente = st.selectbox("Seu nome:", atendentes_por_setor[setor])
 
-pendentes = st.session_state.senhas_pendentes[setor]
-atendidas = st.session_state.senhas_atendidas[setor]
+# Carregar senhas pendentes
+res = requests.get(api_pendentes)
+senhas = res.json()
+senhas_setor = [s for s in senhas if s["setor"] == setor]
 
-st.subheader(f"Senhas pendentes - {setor} ({len(pendentes)})")
+st.subheader(f"Senhas pendentes para o setor {setor}")
 
-# Detecta qual botão foi clicado
-idx_para_remover = None
-
-if pendentes:
-    for idx, item in enumerate(pendentes):
-        col1, col2, col3 = st.columns([2, 2, 1])
-        col1.write(f"**{item['senha']}**")
-        col2.write(f"Hora: {item['hora']}")
-        if col3.button("Atender", key=f"atender_{setor}_{idx}"):
-            idx_para_remover = idx
-
-if idx_para_remover is not None:
-    atendida = pendentes.pop(idx_para_remover)
-    atendida['atendente'] = atendente
-    atendidas.append(atendida)
-    st.experimental_rerun()
-
-# Exibir senhas atendidas
-st.markdown("---")
-st.subheader(f"Senhas atendidas - {setor} ({len(atendidas)})")
-if atendidas:
-    for item in atendidas:
-        st.write(f"**{item['senha']}** - {item['hora']} - Atendido por: {item.get('atendente', 'Desconhecido')}")
+if not senhas_setor:
+    st.info("Nenhuma senha pendente no momento.")
 else:
+    for senha in senhas_setor:
+        col1, col2, col3 = st.columns([3, 2, 1])
+        col1.write(f"**{senha['senha']}**")
+        col2.write(f"Hora: {senha['hora']}")
+        if col3.button("Atender", key=f"btn_{senha['senha']}"):
+            # 1. Mover para aba "Atendidas"
+            payload = {
+                "senha": senha["senha"],
+                "setor": senha["setor"],
+                "hora": senha["hora"],
+                "atendente": atendente
+            }
+            requests.post(api_atendidas, json=payload)
+
+            # 2. Remover da aba "Pendentes"
+            requests.delete(f"{api_pendentes}?senha={senha['senha']}&setor={senha['setor']}&hora={senha['hora']}")
+            st.success(f"Senha {senha['senha']} atendida por {atendente}")
+            st.experimental_rerun()
+
+st.markdown("---")
+st.subheader("Últimas senhas atendidas")
+
+res2 = requests.get(api_atendidas)
+atendidas = res2.json()
+filtradas = [s for s in atendidas if s["setor"] == setor]
+
+if not filtradas:
     st.info("Nenhuma senha atendida ainda.")
+else:
+    for item in filtradas[::-1][:10]:
+        st.write(f"**{item['senha']}** - {item['hora']} - 👤 {item.get('atendente', '—')}")
