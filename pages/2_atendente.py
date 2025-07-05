@@ -17,11 +17,10 @@ atendentes = {
 setor = st.selectbox("Selecione o setor:", setores)
 atendente = st.selectbox("Selecione seu nome:", atendentes[setor])
 
-# Botão de atualização manual
 if st.button("🔄 Atualizar lista"):
     st.experimental_rerun()
 
-# Obter senhas pendentes
+# Buscar senhas pendentes
 try:
     res = requests.get(api_pendentes)
     senhas = res.json()
@@ -39,8 +38,9 @@ else:
         col1, col2, col3 = st.columns([3, 2, 1])
         col1.write(f"**{senha['senha']}**")
         col2.write(f"{senha['hora']}")
-        if col3.button("Atender", key=senha['senha']):
+        if col3.button("Atender", key=senha['id']):
             payload = {
+                "id": senha["id"],
                 "senha": senha["senha"],
                 "setor": senha["setor"],
                 "hora": senha["hora"],
@@ -48,23 +48,21 @@ else:
             }
 
             try:
-                # Enviar para atendidas
+                # 1. Salvar em Atendidas
                 r = requests.post(api_atendidas, json=payload)
                 if r.status_code != 200:
-                    st.error("Erro ao mover para atendidas.")
+                    st.error("Erro ao salvar em atendidas.")
                     st.stop()
 
-                # Remover da pendente
-                url_delete = f"{api_pendentes}?senha={senha['senha']}&setor={senha['setor']}&hora={senha['hora']}"
-                r2 = requests.delete(url_delete)
+                # 2. Apagar da Pendentes usando o ID
+                r2 = requests.delete(f"{api_pendentes}?id={senha['id']}")
                 if r2.status_code == 200:
-                    st.success(f"Senha {senha['senha']} atendida por {atendente}")
+                    st.success(f"Senha {senha['senha']} atendida.")
                     st.experimental_rerun()
                 else:
-                    st.error("Erro ao remover senha da lista.")
+                    st.error("Erro ao remover da lista.")
             except Exception as e:
                 st.error(f"Erro ao atender: {e}")
-                st.stop()
 
 # Mostrar últimas atendidas
 st.markdown("---")

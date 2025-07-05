@@ -1,6 +1,7 @@
 import streamlit as st
 import requests
 from datetime import datetime
+import uuid
 
 st.title("🎫 Gerador de Senhas")
 
@@ -14,25 +15,23 @@ with st.form("form_gerar"):
     enviar = st.form_submit_button("Gerar Senha")
 
     if enviar:
-        # Buscar senhas já existentes
         try:
             res = requests.get(api_pendentes)
-            if res.status_code != 200:
-                st.error("Erro ao acessar a planilha online.")
-                st.stop()
             senhas = res.json()
         except Exception as e:
-            st.error(f"Erro na conexão: {e}")
+            st.error(f"Erro ao acessar a planilha: {e}")
             st.stop()
 
-        # Gera nova senha
         if senha_manual.strip():
             nova_senha = senha_manual.strip()
         else:
             prefixo = setor[:2].upper()
             nova_senha = f"{prefixo}-{len(senhas)+1:03d}"
 
+        id_unico = str(uuid.uuid4())
+
         payload = {
+            "id": id_unico,
             "senha": nova_senha,
             "setor": setor,
             "hora": datetime.now().strftime("%H:%M:%S")
@@ -43,6 +42,6 @@ with st.form("form_gerar"):
             if r.status_code == 200:
                 st.success(f"Senha '{nova_senha}' gerada com sucesso!")
             else:
-                st.error("Erro ao salvar a senha. Verifique a conexão.")
+                st.error("Erro ao salvar a senha.")
         except Exception as e:
             st.error(f"Erro ao enviar: {e}")
