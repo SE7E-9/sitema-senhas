@@ -5,14 +5,11 @@ from streamlit_autorefresh import st_autorefresh
 st.set_page_config(page_title="Painel do Atendente", layout="centered")
 st.title("📋 Painel do Atendente")
 
-# 🔄 Atualização automática
 st_autorefresh(interval=10_000, key="refresh")
 
-# APIs (use os novos links)
 api_pendentes = "https://api.sheetbest.com/sheets/4967f136-9e15-47ff-b66d-b72b79bcf2d3"
 api_atendidas = "https://api.sheetbest.com/sheets/85deb476-3818-459c-9208-e0f41516d286"
 
-# Setores e atendentes
 setores = ['Veículos', 'Financeiro', 'Protocolo', 'Geral']
 atendentes_por_setor = {
     'Veículos': ['Atendente 1', 'Atendente 2', 'Atendente 3', 'Atendente 4', 'Atendente 5'],
@@ -21,11 +18,9 @@ atendentes_por_setor = {
     'Geral': ['Geral Único']
 }
 
-# Seleções fixas
 setor = st.selectbox("Selecione o setor:", setores)
 atendente = st.selectbox("Selecione seu nome:", atendentes_por_setor[setor])
 
-# 📥 Carregar senhas pendentes
 try:
     res = requests.get(api_pendentes)
     res.raise_for_status()
@@ -34,7 +29,6 @@ except Exception as e:
     st.error(f"Erro ao carregar senhas pendentes: {e}")
     todas = []
 
-# Filtrar por setor
 senhas_do_setor = [
     s for s in todas
     if s.get("setor", "").strip().lower() == setor.lower()
@@ -57,7 +51,7 @@ else:
                 "senha": senha["senha"],
                 "setor": senha["setor"],
                 "hora": senha["hora"],
-                "atendente": atendente  # Certifique-se de que isso está correto!
+                "atendente": atendente
             }
             try:
                 r1 = requests.post(api_atendidas, json=payload)
@@ -71,7 +65,6 @@ else:
             except Exception as e:
                 st.error(f"Erro ao registrar atendimento: {e}")
 
-# 📚 Histórico
 st.markdown("---")
 st.subheader("📚 Últimos Atendimentos")
 
@@ -79,7 +72,7 @@ try:
     res = requests.get(api_atendidas)
     res.raise_for_status()
     historico = res.json()
-    historico = [s for s in historico if s.get("setor", "").strip().lower() == setor.lower()]
+    historico = [s for s in historico if s.get("setor", "").strip().lower() == setor.lower() and s.get("atendente")]
     historico = historico[::-1][:10]
 
     for s in historico:

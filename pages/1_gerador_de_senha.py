@@ -6,18 +6,14 @@ import uuid
 st.set_page_config(page_title="Gerador de Senhas", layout="centered")
 st.title("🎫 Gerador de Senhas")
 
-# ✅ API correta da planilha de senhas PENDENTES
 api_pendentes = "https://api.sheetbest.com/sheets/4967f136-9e15-47ff-b66d-b72b79bcf2d3"
 
-# Setores disponíveis
 setores = ['Veículos', 'Financeiro', 'Protocolo', 'Geral']
 setor = st.selectbox("Selecione o setor:", setores)
 
-# Campo para senha manual
 if "senha_manual" not in st.session_state:
     st.session_state.senha_manual = ""
 
-# Formulário
 with st.form("form_gerar"):
     senha_manual = st.text_input("Digite a senha manual (opcional):", value=st.session_state.senha_manual)
     enviar = st.form_submit_button("Gerar Senha")
