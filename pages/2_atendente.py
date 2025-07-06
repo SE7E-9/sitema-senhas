@@ -5,14 +5,13 @@ from streamlit_autorefresh import st_autorefresh
 st.set_page_config(page_title="Painel do Atendente", layout="centered")
 st.title("📋 Painel do Atendente")
 
-# Atualiza automaticamente a cada 10 segundos para pegar senhas novas
+# Atualização automática a cada 10 segundos
 st_autorefresh(interval=10_000, key="refresh")
 
-# APIs das planilhas (novas URLs)
-api_pendentes = "https://api.sheetbest.com/sheets/4967f136-9e15-47ff-b66d-b72b79bcf2d3"  # Senhas pendentes
-api_atendidas = "https://api.sheetbest.com/sheets/85deb476-3818-459c-9208-e0f41516d286"  # Senhas atendidas
+# ✅ APIs corrigidas
+api_pendentes = "https://api.sheetbest.com/sheets/4967f136-9e15-47ff-b66d-b72b79bcf2d3"
+api_atendidas = "https://api.sheetbest.com/sheets/85deb476-3818-459c-9208-e0f41516d286"
 
-# Setores e atendentes
 setores = ['Veículos', 'Financeiro', 'Protocolo', 'Geral']
 atendentes = {
     'Veículos': ['Atendente 1', 'Atendente 2', 'Atendente 3', 'Atendente 4', 'Atendente 5'],
@@ -32,7 +31,6 @@ except Exception as e:
     st.error(f"Erro ao carregar senhas pendentes: {e}")
     todas_senhas = []
 
-# Filtra senhas do setor selecionado
 senhas_do_setor = [s for s in todas_senhas if s.get("setor", "").strip().lower() == setor.lower()]
 
 st.subheader(f"🎟️ Senhas Pendentes - {setor}")
@@ -46,7 +44,6 @@ else:
         col1, col2, col3 = st.columns([3, 2, 1])
         col1.markdown(f"**{senha.get('senha', '—')}**")
         col2.markdown(f"{senha.get('hora', '—')}")
-
         if col3.button("Atender", key=senha["id"]):
             payload = {
                 "id": senha["id"],
@@ -56,10 +53,8 @@ else:
                 "atendente": atendente
             }
             try:
-                # Salva na planilha de atendidas
                 r1 = requests.post(api_atendidas, json=payload)
                 r1.raise_for_status()
-                # Remove da planilha de pendentes
                 r2 = requests.delete(f"{api_pendentes}?id={senha['id']}")
                 r2.raise_for_status()
                 st.success(f"✅ Senha {senha['senha']} atendida por {atendente}")
@@ -67,6 +62,7 @@ else:
             except Exception as e:
                 st.error(f"Erro ao atender a senha: {e}")
 
+# Últimos atendimentos
 st.markdown("---")
 st.subheader("📚 Últimos Atendimentos")
 
