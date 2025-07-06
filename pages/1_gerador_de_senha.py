@@ -6,7 +6,7 @@ import uuid
 st.set_page_config(page_title="Gerador de Senhas", layout="centered")
 st.title("🎫 Gerador de Senhas")
 
-# 📍 API da planilha de senhas pendentes
+# API da planilha de senhas pendentes (SheetBest)
 api_pendentes = "https://api.sheetbest.com/sheets/f2bab54d-e790-46ea-9371-bd68e68bbcbc"
 
 # Setores disponíveis
@@ -27,18 +27,18 @@ with st.form("form_gerar"):
             st.error(f"Erro ao acessar a planilha: {e}")
             st.stop()
 
+        # Gera senha automática ou usa manual
         if senha_manual.strip():
             nova_senha = senha_manual.strip()
         else:
             prefixo = setor[:2].upper()
             nova_senha = f"{prefixo}-{len(senhas)+1:03d}"
 
-        id_unico = str(uuid.uuid4())
-
+        # Monta os dados para envio
         payload = {
-            "id": id_unico,
+            "id": str(uuid.uuid4()),
             "senha": nova_senha,
-            "setor": setor.strip().title(),  # Normaliza o texto
+            "setor": setor.strip().title(),
             "hora": datetime.now().strftime("%H:%M:%S")
         }
 
@@ -46,6 +46,6 @@ with st.form("form_gerar"):
             r = requests.post(api_pendentes, json=payload)
             r.raise_for_status()
             st.success(f"✅ Senha '{nova_senha}' gerada com sucesso!")
-            st.experimental_rerun()
+            st.rerun()  # Corrigido para funcionar nas versões mais recentes
         except Exception as e:
             st.error(f"Erro ao salvar a senha: {e}")
