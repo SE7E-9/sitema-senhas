@@ -6,8 +6,7 @@ import uuid
 st.set_page_config(page_title="Gerador de Senhas", layout="centered")
 st.title("🎫 Gerador de Senhas")
 
-# NOVO LINK: API da planilha de pendentes
-api_pendentes = "https://api.sheetbest.com/sheets/c424cb40-ac76-4fdd-ae6f-7a99f4bc77fe"
+api_pendentes = "https://api.sheetbest.com/sheets/2293ec75-0867-4721-ada5-8e7525c96351"
 
 setores = ['Veículos', 'Financeiro', 'Protocolo', 'Geral']
 setor = st.selectbox("Selecione o setor:", setores)

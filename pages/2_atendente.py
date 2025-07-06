@@ -5,11 +5,9 @@ from streamlit_autorefresh import st_autorefresh
 st.set_page_config(page_title="Painel do Atendente", layout="centered")
 st.title("📋 Painel do Atendente")
 
-# Atualização automática
 st_autorefresh(interval=10_000, key="refresh")
 
-# NOVOS LINKS das planilhas
-api_pendentes = "https://api.sheetbest.com/sheets/c424cb40-ac76-4fdd-ae6f-7a99f4bc77fe"
+api_pendentes = "https://api.sheetbest.com/sheets/2293ec75-0867-4721-ada5-8e7525c96351"
 api_atendidas = "https://api.sheetbest.com/sheets/85deb476-3818-459c-9208-e0f41516d286"
 
 setores = ['Veículos', 'Financeiro', 'Protocolo', 'Geral']
@@ -62,7 +60,7 @@ else:
 
 def atendente_preenchido(senha):
     atendente_valor = senha.get("atendente")
-    return isinstance(atendente_valor, str) and atendente_valor.strip().lower() not in ["", "-", "nenhum", "vazio"]
+    return isinstance(atendente_valor, str) and atendente_valor.strip() != ""
 
 st.markdown("---")
 st.subheader("📚 Últimos Atendimentos")
