@@ -8,11 +8,11 @@ st.title("📋 Painel do Atendente")
 # Atualiza automaticamente a cada 10 segundos para pegar senhas novas
 st_autorefresh(interval=10_000, key="refresh")
 
-# APIs das planilhas (confirme que estão certas)
-api_pendentes = "https://api.sheetbest.com/sheets/f2bab54d-e790-46ea-9371-bd68e68bbcbc"  # Senhas pendentes
-api_atendidas = "https://api.sheetbest.com/sheets/bb970f05-0342-4667-8fd4-8c16998c7422"  # Senhas atendidas
+# APIs das planilhas (novas URLs)
+api_pendentes = "https://api.sheetbest.com/sheets/4967f136-9e15-47ff-b66d-b72b79bcf2d3"  # Senhas pendentes
+api_atendidas = "https://api.sheetbest.com/sheets/85deb476-3818-459c-9208-e0f41516d286"  # Senhas atendidas
 
-# Setores e atendentes (ajuste nomes conforme sua equipe)
+# Setores e atendentes
 setores = ['Veículos', 'Financeiro', 'Protocolo', 'Geral']
 atendentes = {
     'Veículos': ['Atendente 1', 'Atendente 2', 'Atendente 3', 'Atendente 4', 'Atendente 5'],
@@ -46,8 +46,8 @@ else:
         col1, col2, col3 = st.columns([3, 2, 1])
         col1.markdown(f"**{senha.get('senha', '—')}**")
         col2.markdown(f"{senha.get('hora', '—')}")
+
         if col3.button("Atender", key=senha["id"]):
-            # Monta payload para mover senha para atendidas
             payload = {
                 "id": senha["id"],
                 "senha": senha["senha"],
@@ -63,11 +63,10 @@ else:
                 r2 = requests.delete(f"{api_pendentes}?id={senha['id']}")
                 r2.raise_for_status()
                 st.success(f"✅ Senha {senha['senha']} atendida por {atendente}")
-                st.experimental_rerun()  # Atualiza a página
+                st.experimental_rerun()
             except Exception as e:
                 st.error(f"Erro ao atender a senha: {e}")
 
-# Mostrar histórico de últimas 10 senhas atendidas do setor
 st.markdown("---")
 st.subheader("📚 Últimos Atendimentos")
 
