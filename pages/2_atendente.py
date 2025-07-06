@@ -8,10 +8,9 @@ st.title("📋 Painel do Atendente")
 # 🔁 Atualização automática a cada 10 segundos
 st_autorefresh(interval=10_000, key="atualizacao")
 
-# 🌐 APIs do Sheet.best
-api_pendentes = "https://api.sheetbest.com/sheets/bb970f05-0342-4667-8fd4-8c16998c7422"
-
-api_atendidas = "https://api.sheetbest.com/sheets/f2bab54d-e790-46ea-9371-bd68e68bbcbc"
+# 🌐 APIs do Sheet.best — links corrigidos
+api_pendentes = "https://api.sheetbest.com/sheets/f2bab54d-e790-46ea-9371-bd68e68bbcbc"  # Planilha Senhas Pendentes
+api_atendidas = "https://api.sheetbest.com/sheets/bb970f05-0342-4667-8fd4-8c16998c7422"  # Planilha Senhas Atendidas
 
 # 📌 Setores e atendentes
 setores = ['Veículos', 'Financeiro', 'Protocolo', 'Geral']
@@ -22,11 +21,11 @@ atendentes = {
     'Geral': ['Geral Único']
 }
 
-# 🔽 Seleção
+# 🔽 Seleção do setor e atendente
 setor = st.selectbox("Selecione o setor:", setores)
 atendente = st.selectbox("Selecione seu nome:", atendentes[setor])
 
-# 📥 Buscar senhas pendentes
+# 📥 Buscar senhas pendentes para o setor selecionado
 try:
     res = requests.get(api_pendentes)
     res.raise_for_status()
@@ -47,7 +46,7 @@ if not senhas_do_setor:
 else:
     for senha in senhas_do_setor:
         if "id" not in senha or not senha["id"]:
-            continue  # Pula senhas antigas sem ID
+            continue  # Pula senhas sem ID
 
         col1, col2, col3 = st.columns([3, 2, 1])
         col1.markdown(f"**{senha.get('senha', '—')}**")
@@ -63,9 +62,11 @@ else:
             }
 
             try:
+                # Envia para a planilha de atendidas
                 r1 = requests.post(api_atendidas, json=payload)
                 r1.raise_for_status()
 
+                # Remove da planilha de pendentes
                 r2 = requests.delete(f"{api_pendentes}?id={senha['id']}")
                 r2.raise_for_status()
 
@@ -74,7 +75,7 @@ else:
             except Exception as e:
                 st.error(f"Erro ao atender a senha: {e}")
 
-# 🕓 Últimas senhas atendidas
+# 🕓 Mostrar últimos 10 atendimentos do setor
 st.markdown("---")
 st.subheader("📚 Últimos Atendimentos")
 
@@ -82,9 +83,9 @@ try:
     res = requests.get(api_atendidas)
     res.raise_for_status()
     historico = [s for s in res.json() if s.get("setor", "").strip().lower() == setor.strip().lower()]
-    historico = historico[::-1][:10]
+    historico = historico[::-1][:10]  # mostra os 10 mais recentes
 
     for s in historico:
         st.write(f"🟢 **{s.get('senha', '—')}** às {s.get('hora', '—')} por 👤 {s.get('atendente', '—')}")
-except:
+except Exception:
     st.warning("⚠️ Não foi possível carregar o histórico.")
