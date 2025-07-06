@@ -76,22 +76,3 @@ def atendente_preenchido(senha):
     atendente_valor = senha.get("atendente")
     return isinstance(atendente_valor, str) and atendente_valor.strip() != ""
 
-# Mostrar histórico dos últimos atendimentos válidos
-st.markdown("---")
-st.subheader("📚 Últimos Atendimentos")
-
-try:
-    res = requests.get(api_atendidas)
-    res.raise_for_status()
-    historico = res.json()
-    historico = [
-        s for s in historico
-        if s.get("setor", "").strip().lower() == setor.lower() and atendente_preenchido(s)
-    ]
-    historico = historico[::-1][:10]
-
-    for s in historico:
-        st.write(f"🟢 **{s.get('senha', '—')}** às {s.get('hora', '—')} por 👤 {s.get('atendente', '—')}")
-
-except Exception as e:
-    st.warning(f"⚠️ Não foi possível carregar o histórico. Erro: {e}")
