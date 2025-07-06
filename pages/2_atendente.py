@@ -30,7 +30,10 @@ try:
     res = requests.get(api_pendentes)
     res.raise_for_status()
     todas = res.json()
-    senhas_do_setor = [s for s in todas if s.get("setor") == setor]
+    senhas_do_setor = [
+        s for s in todas 
+        if s.get("setor", "").strip().lower() == setor.strip().lower()
+    ]
 except Exception as e:
     st.error(f"Erro ao carregar senhas pendentes: {e}")
     senhas_do_setor = []
@@ -48,7 +51,7 @@ else:
         col1, col2, col3 = st.columns([3, 2, 1])
         col1.markdown(f"**{senha.get('senha', '—')}**")
         col2.markdown(f"{senha.get('hora', '—')}")
-        
+
         if col3.button("Atender", key=senha["id"]):
             payload = {
                 "id": senha["id"],
@@ -77,7 +80,7 @@ st.subheader("📚 Últimos Atendimentos")
 try:
     res = requests.get(api_atendidas)
     res.raise_for_status()
-    historico = [s for s in res.json() if s.get("setor") == setor]
+    historico = [s for s in res.json() if s.get("setor", "").strip().lower() == setor.strip().lower()]
     historico = historico[::-1][:10]
 
     for s in historico:
