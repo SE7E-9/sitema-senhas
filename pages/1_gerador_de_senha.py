@@ -6,7 +6,8 @@ import uuid
 st.set_page_config(page_title="Gerador de Senhas", layout="centered")
 st.title("🎫 Gerador de Senhas")
 
-api_pendentes = "https://api.sheetbest.com/sheets/4967f136-9e15-47ff-b66d-b72b79bcf2d3"
+# NOVO LINK: API da planilha de pendentes
+api_pendentes = "https://api.sheetbest.com/sheets/c424cb40-ac76-4fdd-ae6f-7a99f4bc77fe"
 
 setores = ['Veículos', 'Financeiro', 'Protocolo', 'Geral']
 setor = st.selectbox("Selecione o setor:", setores)
@@ -27,12 +28,7 @@ with st.form("form_gerar"):
             st.error(f"Erro ao acessar a planilha: {e}")
             st.stop()
 
-        if senha_manual.strip():
-            nova_senha = senha_manual.strip()
-        else:
-            prefixo = setor[:2].upper()
-            nova_senha = f"{prefixo}-{len(senhas)+1:03d}"
-
+        nova_senha = senha_manual.strip() if senha_manual.strip() else f"{setor[:2].upper()}-{len(senhas)+1:03d}"
         id_unico = str(uuid.uuid4())
 
         payload = {

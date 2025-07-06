@@ -5,14 +5,13 @@ from streamlit_autorefresh import st_autorefresh
 st.set_page_config(page_title="Painel do Atendente", layout="centered")
 st.title("📋 Painel do Atendente")
 
-# Atualização automática a cada 10 segundos
+# Atualização automática
 st_autorefresh(interval=10_000, key="refresh")
 
-# APIs atualizadas para as planilhas do Sheet.best
-api_pendentes = "https://api.sheetbest.com/sheets/4967f136-9e15-47ff-b66d-b72b79bcf2d3"  # pendentes
-api_atendidas = "https://api.sheetbest.com/sheets/85deb476-3818-459c-9208-e0f41516d286"  # atendidas
+# NOVOS LINKS das planilhas
+api_pendentes = "https://api.sheetbest.com/sheets/c424cb40-ac76-4fdd-ae6f-7a99f4bc77fe"
+api_atendidas = "https://api.sheetbest.com/sheets/85deb476-3818-459c-9208-e0f41516d286"
 
-# Setores e atendentes configurados
 setores = ['Veículos', 'Financeiro', 'Protocolo', 'Geral']
 atendentes_por_setor = {
     'Veículos': ['Atendente 1', 'Atendente 2', 'Atendente 3', 'Atendente 4', 'Atendente 5'],
@@ -21,11 +20,9 @@ atendentes_por_setor = {
     'Geral': ['Geral Único']
 }
 
-# Seleção de setor e atendente
 setor = st.selectbox("Selecione o setor:", setores)
 atendente = st.selectbox("Selecione seu nome:", atendentes_por_setor[setor])
 
-# Carregar senhas pendentes
 try:
     res = requests.get(api_pendentes)
     res.raise_for_status()
@@ -34,11 +31,7 @@ except Exception as e:
     st.error(f"Erro ao carregar senhas pendentes: {e}")
     todas = []
 
-# Filtrar senhas pendentes do setor
-senhas_do_setor = [
-    s for s in todas
-    if s.get("setor", "").strip().lower() == setor.lower()
-]
+senhas_do_setor = [s for s in todas if s.get("setor", "").strip().lower() == setor.lower()]
 
 st.subheader(f"🎟️ Senhas Pendentes - {setor}")
 
@@ -60,23 +53,17 @@ else:
                 "atendente": atendente
             }
             try:
-                r1 = requests.post(api_atendidas, json=payload)
-                r1.raise_for_status()
-
-                r2 = requests.delete(f"{api_pendentes}?id={senha['id']}")
-                r2.raise_for_status()
-
+                requests.post(api_atendidas, json=payload).raise_for_status()
+                requests.delete(f"{api_pendentes}?id={senha['id']}").raise_for_status()
                 st.success(f"✅ Senha {senha['senha']} atendida por {atendente}")
                 st.experimental_rerun()
             except Exception as e:
                 st.error(f"Erro ao registrar atendimento: {e}")
 
-# Função segura para checar se atendente está preenchido
 def atendente_preenchido(senha):
     atendente_valor = senha.get("atendente")
-    return isinstance(atendente_valor, str) and atendente_valor.strip() != ""
+    return isinstance(atendente_valor, str) and atendente_valor.strip().lower() not in ["", "-", "nenhum", "vazio"]
 
-# Mostrar histórico dos últimos atendimentos válidos
 st.markdown("---")
 st.subheader("📚 Últimos Atendimentos")
 
@@ -92,6 +79,5 @@ try:
 
     for s in historico:
         st.write(f"🟢 **{s.get('senha', '—')}** às {s.get('hora', '—')} por 👤 {s.get('atendente', '—')}")
-
 except Exception as e:
     st.warning(f"⚠️ Não foi possível carregar o histórico. Erro: {e}")
