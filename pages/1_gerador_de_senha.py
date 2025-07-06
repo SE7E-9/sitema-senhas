@@ -7,7 +7,7 @@ st.set_page_config(page_title="Gerador de Senhas", layout="centered")
 st.title("🎫 Gerador de Senhas")
 
 # API da planilha de senhas pendentes
-api_pendentes = "https://api.sheetbest.com/sheets/f2bab54d-e790-46ea-9371-bd68e68bbcbc"
+api_pendentes = "https://api.sheetbest.com/sheets/bb970f05-0342-4667-8fd4-8c16998c7422"
 
 # Setores disponíveis
 setores = ['Veículos', 'Financeiro', 'Protocolo', 'Geral']

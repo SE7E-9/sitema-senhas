@@ -9,8 +9,9 @@ st.title("📋 Painel do Atendente")
 st_autorefresh(interval=10_000, key="atualizacao")
 
 # 🌐 APIs do Sheet.best
-api_pendentes = "https://api.sheetbest.com/sheets/f2bab54d-e790-46ea-9371-bd68e68bbcbc"
-api_atendidas = "https://api.sheetbest.com/sheets/bb970f05-0342-4667-8fd4-8c16998c7422"
+api_pendentes = "https://api.sheetbest.com/sheets/bb970f05-0342-4667-8fd4-8c16998c7422"
+
+api_atendidas = "https://api.sheetbest.com/sheets/f2bab54d-e790-46ea-9371-bd68e68bbcbc"
 
 # 📌 Setores e atendentes
 setores = ['Veículos', 'Financeiro', 'Protocolo', 'Geral']
