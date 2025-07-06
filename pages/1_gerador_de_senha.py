@@ -1,43 +1,57 @@
-# Buscar senhas pendentes
-try:
-    res = requests.get(api_pendentes)
-    res.raise_for_status()
-    todas = res.json()
-    senhas_do_setor = [s for s in todas if s.get("setor", "").strip().lower() == setor.strip().lower()]
-except Exception as e:
-    st.error(f"Erro ao carregar senhas pendentes: {e}")
-    senhas_do_setor = []
+import streamlit as st
+import requests
+from datetime import datetime
+import uuid
 
-# Exibir senhas pendentes
-st.subheader(f"🎟️ Senhas Pendentes - {setor}")
+st.set_page_config(page_title="Gerador de Senhas", layout="centered")
+st.title("🎫 Gerador de Senhas")
 
-if not senhas_do_setor:
-    st.info("Nenhuma senha pendente no momento.")
-else:
-    for senha in senhas_do_setor:
-        if "id" not in senha or not senha["id"]:
-            continue
+# API da planilha de senhas pendentes
+api_pendentes = "https://api.sheetbest.com/sheets/f2bab54d-e790-46ea-9371-bd68e68bbcbc"
 
-        col1, col2, col3 = st.columns([3, 2, 1])
-        col1.markdown(f"**{senha.get('senha', '—')}**")
-        col2.markdown(f"{senha.get('hora', '—')}")
+# Setores disponíveis
+setores = ['Veículos', 'Financeiro', 'Protocolo', 'Geral']
+setor = st.selectbox("Selecione o setor:", setores)
 
-        if col3.button("Atender", key=senha["id"]):
-            payload = {
-                "id": senha["id"],
-                "senha": senha["senha"],
-                "setor": senha["setor"],
-                "hora": senha["hora"],
-                "atendente": atendente
-            }
-            try:
-                r1 = requests.post(api_atendidas, json=payload)
-                r1.raise_for_status()
+# Campo para senha manual, guardado no session_state para limpar após envio
+if "senha_manual" not in st.session_state:
+    st.session_state.senha_manual = ""
 
-                r2 = requests.delete(f"{api_pendentes}?id={senha['id']}")
-                r2.raise_for_status()
+# Formulário para gerar senha
+with st.form("form_gerar"):
+    senha_manual = st.text_input("Digite a senha manual (opcional):", value=st.session_state.senha_manual)
+    enviar = st.form_submit_button("Gerar Senha")
 
-                st.success(f"✅ Senha {senha['senha']} atendida por {atendente}")
-                st.experimental_rerun()
-            except Exception as e:
-                st.error(f"Erro ao atender a senha: {e}")
+    if enviar:
+        try:
+            res = requests.get(api_pendentes)
+            res.raise_for_status()
+            senhas = res.json()
+        except Exception as e:
+            st.error(f"Erro ao acessar a planilha: {e}")
+            st.stop()
+
+        # Geração de senha automática ou manual
+        if senha_manual.strip():
+            nova_senha = senha_manual.strip()
+        else:
+            prefixo = setor[:2].upper()
+            nova_senha = f"{prefixo}-{len(senhas)+1:03d}"
+
+        # Cria um ID único para a senha
+        id_unico = str(uuid.uuid4())
+
+        payload = {
+            "id": id_unico,
+            "senha": nova_senha,
+            "setor": setor.strip().title(),
+            "hora": datetime.now().strftime("%H:%M:%S")
+        }
+
+        try:
+            r = requests.post(api_pendentes, json=payload)
+            r.raise_for_status()
+            st.success(f"✅ Senha '{nova_senha}' gerada com sucesso para o setor **{setor}**.")
+            st.session_state.senha_manual = ""  # Limpa o campo após envio
+        except Exception as e:
+            st.error(f"Erro ao salvar a senha: {e}")

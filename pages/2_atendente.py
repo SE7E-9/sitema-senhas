@@ -2,17 +2,17 @@ import streamlit as st
 import requests
 from streamlit_autorefresh import st_autorefresh
 
-st.set_page_config(page_title="Atendente", layout="centered")
+st.set_page_config(page_title="Painel do Atendente", layout="centered")
 st.title("📋 Painel do Atendente")
 
-# 🔁 Atualização automática a cada 10 segundos
-st_autorefresh(interval=10_000, key="atualizacao")
+# Atualiza automaticamente a cada 10 segundos para pegar senhas novas
+st_autorefresh(interval=10_000, key="refresh")
 
-# 🌐 APIs do Sheet.best — links corrigidos
-api_pendentes = "https://api.sheetbest.com/sheets/f2bab54d-e790-46ea-9371-bd68e68bbcbc"  # Planilha Senhas Pendentes
-api_atendidas = "https://api.sheetbest.com/sheets/bb970f05-0342-4667-8fd4-8c16998c7422"  # Planilha Senhas Atendidas
+# APIs das planilhas (confirme que estão certas)
+api_pendentes = "https://api.sheetbest.com/sheets/f2bab54d-e790-46ea-9371-bd68e68bbcbc"  # Senhas pendentes
+api_atendidas = "https://api.sheetbest.com/sheets/bb970f05-0342-4667-8fd4-8c16998c7422"  # Senhas atendidas
 
-# 📌 Setores e atendentes
+# Setores e atendentes (ajuste nomes conforme sua equipe)
 setores = ['Veículos', 'Financeiro', 'Protocolo', 'Geral']
 atendentes = {
     'Veículos': ['Atendente 1', 'Atendente 2', 'Atendente 3', 'Atendente 4', 'Atendente 5'],
@@ -21,24 +21,20 @@ atendentes = {
     'Geral': ['Geral Único']
 }
 
-# 🔽 Seleção do setor e atendente
 setor = st.selectbox("Selecione o setor:", setores)
 atendente = st.selectbox("Selecione seu nome:", atendentes[setor])
 
-# 📥 Buscar senhas pendentes para o setor selecionado
 try:
     res = requests.get(api_pendentes)
     res.raise_for_status()
-    todas = res.json()
-    senhas_do_setor = [
-        s for s in todas 
-        if s.get("setor", "").strip().lower() == setor.strip().lower()
-    ]
+    todas_senhas = res.json()
 except Exception as e:
     st.error(f"Erro ao carregar senhas pendentes: {e}")
-    senhas_do_setor = []
+    todas_senhas = []
 
-# 🧾 Exibir senhas pendentes
+# Filtra senhas do setor selecionado
+senhas_do_setor = [s for s in todas_senhas if s.get("setor", "").strip().lower() == setor.lower()]
+
 st.subheader(f"🎟️ Senhas Pendentes - {setor}")
 
 if not senhas_do_setor:
@@ -46,13 +42,12 @@ if not senhas_do_setor:
 else:
     for senha in senhas_do_setor:
         if "id" not in senha or not senha["id"]:
-            continue  # Pula senhas sem ID
-
+            continue
         col1, col2, col3 = st.columns([3, 2, 1])
         col1.markdown(f"**{senha.get('senha', '—')}**")
         col2.markdown(f"{senha.get('hora', '—')}")
-
         if col3.button("Atender", key=senha["id"]):
+            # Monta payload para mover senha para atendidas
             payload = {
                 "id": senha["id"],
                 "senha": senha["senha"],
@@ -60,31 +55,27 @@ else:
                 "hora": senha["hora"],
                 "atendente": atendente
             }
-
             try:
-                # Envia para a planilha de atendidas
+                # Salva na planilha de atendidas
                 r1 = requests.post(api_atendidas, json=payload)
                 r1.raise_for_status()
-
                 # Remove da planilha de pendentes
                 r2 = requests.delete(f"{api_pendentes}?id={senha['id']}")
                 r2.raise_for_status()
-
                 st.success(f"✅ Senha {senha['senha']} atendida por {atendente}")
-                st.experimental_rerun()
+                st.experimental_rerun()  # Atualiza a página
             except Exception as e:
                 st.error(f"Erro ao atender a senha: {e}")
 
-# 🕓 Mostrar últimos 10 atendimentos do setor
+# Mostrar histórico de últimas 10 senhas atendidas do setor
 st.markdown("---")
 st.subheader("📚 Últimos Atendimentos")
 
 try:
     res = requests.get(api_atendidas)
     res.raise_for_status()
-    historico = [s for s in res.json() if s.get("setor", "").strip().lower() == setor.strip().lower()]
-    historico = historico[::-1][:10]  # mostra os 10 mais recentes
-
+    historico = [s for s in res.json() if s.get("setor", "").strip().lower() == setor.lower()]
+    historico = historico[::-1][:10]
     for s in historico:
         st.write(f"🟢 **{s.get('senha', '—')}** às {s.get('hora', '—')} por 👤 {s.get('atendente', '—')}")
 except Exception:
